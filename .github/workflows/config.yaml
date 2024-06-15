@@ -1,0 +1,31 @@
+on: [push]
+
+jobs:
+  scip:
+    runs-on: ubuntu-latest
+    name: SCIP
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SCIP
+        id: scip
+        uses: ./
+        with:
+          version: '9.0.0'
+          cache: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.1'
+
+      - name: Show SCIP version
+        run: ./scip/bin/scip --version
+
+      - name: Install PySCIPOpt
+        run: |
+          export SCIPOPTDIR=${{ steps.scip.outputs.scipoptdir }}
+          pip install --upgrade pip
+          pip install pyscipopt==5.0.0

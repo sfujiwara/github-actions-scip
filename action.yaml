@@ -1,0 +1,48 @@
+name: Build SCIP
+description: Build SCIP.
+
+inputs:
+  version:
+    description: Version of SCIP to be installed.
+    required: true
+    default: '9.0.0'
+  cache:
+    description: Wheather to use cache.
+    required: false
+    default: true
+
+outputs:
+  scipoptdir:
+    description: Directory where SCIP is installed.
+    value: ${GITHUB_WORKSPACE}/scip
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Cache SCIP
+      if: ${{ inputs.cache == 'true' }}
+      id: cache-scip
+      uses: actions/cache@v4
+      with:
+        path: scip
+        key: scip-${{ runner.os }}-${{ inputs.version }}
+
+    - name: Build SCIP
+      if: ${{ steps.cache-scip.outputs.cache-hit != 'true' }}
+      run: |
+        # Download SCIP.
+        VERSION=$(echo ${{ inputs.version }} | sed 's/\.//g')
+        echo $VERSION
+        wget https://github.com/scipopt/scip/releases/download/v${VERSION}/scipoptsuite-${{ inputs.version }}.tgz
+
+        # Extract SCIP.
+        tar -zxvf scipoptsuite-${{ inputs.version }}.tgz
+
+        # Build SCIP.
+        cd scipoptsuite-${{ inputs.version }}
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/scip -DAUTOBUILD=on
+        make
+        make install
+      shell: bash
